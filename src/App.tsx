@@ -220,6 +220,23 @@ function App() {
     }
   }
 
+  const convertTextToNumber = (data: Record<string, any>[]) => {
+    return data.map(row => {
+      const newRow: Record<string, any> = {}
+      Object.keys(row).forEach(key => {
+        const value = row[key]
+        // Try to convert to number if it's a string that looks like a number
+        if (typeof value === 'string' && value.trim() !== '') {
+          const numValue = Number(value.replace(/,/g, ''))
+          newRow[key] = !isNaN(numValue) ? numValue : value
+        } else {
+          newRow[key] = value
+        }
+      })
+      return newRow
+    })
+  }
+
   const cleanOverdue = (rows: any[][]) => {
     rows = rows.slice(5)
     const headers = rows[0]
@@ -234,7 +251,7 @@ function App() {
     return dataset.filter(r => {
       const area = String(r['Area'] || '').trim()
       return area !== '' && area !== 'Area'
-    })
+    }).map(row => convertTextToNumber([row])[0])
   }
 
   const cleanReceivable = (rows: any[][]) => {
@@ -251,7 +268,7 @@ function App() {
     return dataset.filter(r => {
       const area = String(r['Area '] || r['Area'] || '').trim()
       return area !== '' && area !== 'Area'
-    })
+    }).map(row => convertTextToNumber([row])[0])
   }
 
   const cleanAchievement = (rows: any[][]) => {
@@ -278,7 +295,7 @@ function App() {
     return dataset.filter(r => {
       const div = String(r[divisionCol] || '').trim()
       return div !== '' && div !== 'Division'
-    })
+    }).map(row => convertTextToNumber([row])[0])
   }
 
   const cleanHireTarget = (rows: any[][]) => {
@@ -307,7 +324,7 @@ function App() {
     return dataset.filter(r => {
       const area = String(r['Area'] || '').trim()
       return area !== '' && area !== 'Area'
-    })
+    }).map(row => convertTextToNumber([row])[0])
   }
 
   const cleanCustomerJorip = (rows: any[][]) => {
@@ -473,7 +490,7 @@ function App() {
       }
       
       return true
-    })
+    }).map(row => convertTextToNumber([row])[0])
   }
 
   const handleDownload = () => {
@@ -564,7 +581,7 @@ function App() {
           <div className="container">
             <div className="header">
               <h1 className="title">Excel Data Cleaner</h1>
-              <p className="subtitle">Upload, clean, and download your Excel files with ease. Automated detection and processing for multiple file types.</p>
+              <p className="subtitle">আপনার Excel File Upload করুন,  Auto  Blank rows, Columns, unwanted rows Clean , Text to Number করুন এবং Download করুন। File স্বয়ংক্রিয় শনাক্ত করে এবং প্রক্রিয়া করে</p>
             </div>
             
             <div className="controls">
@@ -574,7 +591,7 @@ function App() {
                 <>
                   <CleanerSelector value={cleanerType} onChange={setCleanerType} />
                   <button className="process-button" onClick={handleManualProcess}>
-                    Process with Selected Cleaner
+                    নির্বাচিত ক্লিনার দিয়ে প্রক্রিয়া করুন
                   </button>
                 </>
               )}
@@ -637,15 +654,15 @@ function App() {
           </ul>
           <div className="sidebar-footer">
             <p className="sidebar-footer-text">
-              Upload your file and the system will automatically detect the appropriate cleaner
+              আপনার ফাইল আপলোড করুন এবং সিস্টেম স্বয়ংক্রিয়ভাবে উপযুক্ত ক্লিনার সনাক্ত করবে
             </p>
           </div>
           <div className="sidebar-contact">
             <div className="sidebar-contact-header">
               <span className="sidebar-contact-icon">💡</span>
-              <h4 className="sidebar-contact-title">Need More Cleaners?</h4>
+              <h4 className="sidebar-contact-title">আরও ক্লিনার প্রয়োজন?</h4>
             </div>
-            <p className="sidebar-contact-text">Contact the developer to add custom cleaners for your specific needs</p>
+            <p className="sidebar-contact-text">আপনার নির্দিষ্ট প্রয়োজনের জন্য কাস্টম ক্লিনার যোগ করতে ডেভেলপারের সাথে যোগাযোগ করুন</p>
             <div className="sidebar-contact-buttons">
               <a href="https://wa.me/8801712394851" target="_blank" rel="noopener noreferrer" className="sidebar-contact-btn whatsapp">
                 <span className="btn-icon">📱</span>
