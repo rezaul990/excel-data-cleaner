@@ -1,0 +1,71 @@
+.preview-container {
+  margin: 0 0 30px 0;
+}
+
+.preview-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 15px;
+}
+
+.table-wrapper {
+  max-height: 500px;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.preview-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.preview-table th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 14px 12px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.preview-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+}
+
+.preview-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.preview-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

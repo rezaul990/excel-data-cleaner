@@ -1,0 +1,28 @@
+.summary-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid #93c5fd;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.summary-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.summary-content h4 {
+  margin: 0 0 8px 0;
+  color: #1e40af;
+  font-size: 1.1rem;
+}
+
+.summary-content p {
+  margin: 0;
+  color: #1e3a8a;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
