@@ -31,12 +31,68 @@ function App() {
   const detectCleanerType = (rows: any[][]): string | null => {
     if (rows.length < 6) return null
     
+    // DEBUG: Log first 10 rows to understand file structure
+    console.log('=== FILE DETECTION DEBUG ===')
+    console.log('Total rows:', rows.length)
+    console.log('First 10 rows:')
+    rows.slice(0, 10).forEach((row, idx) => {
+      console.log(`Row ${idx}:`, row.slice(0, 10))
+    })
+    
+    // Check for 9 Criteria - Plaza Ranking FIRST (most specific pattern)
+    // This file has a unique structure with merged headers that need transpose
+    if (rows.length > 7) {
+      const row5 = rows[5]
+      const row6 = rows[6]
+      const row7 = rows[7]
+      
+      console.log('=== 9 CRITERIA DETECTION ===')
+      console.log('Row 5:', row5?.slice(0, 10))
+      console.log('Row 6:', row6?.slice(0, 10))
+      console.log('Row 7:', row7?.slice(0, 10))
+      
+      if (row5 && row6 && row7) {
+        const r5Str = row5.map((h: any) => String(h || '').toLowerCase().trim())
+        const r6Str = row6.map((h: any) => String(h || '').toLowerCase().trim())
+        const r7Str = row7.map((h: any) => String(h || '').toLowerCase().trim())
+        
+        console.log('Row 5 strings:', r5Str.slice(0, 10))
+        console.log('Row 6 strings:', r6Str.slice(0, 10))
+        console.log('Row 7 strings:', r7Str.slice(0, 10))
+        
+        // Check for specific 9 Criteria patterns
+        const hasMainCategories = r5Str.some(h => 
+          h.includes('total') || h.includes('retail') || h.includes('hire') || h.includes('profit')
+        )
+        const hasSubCategories = r6Str.some(h => 
+          h.includes('target') || h.includes('achieve') || h.includes('tk')
+        )
+        const hasAreaInData = r7Str.some(h => h === 'area' || h.includes('area'))
+        
+        console.log('Has main categories:', hasMainCategories)
+        console.log('Has sub categories:', hasSubCategories)
+        console.log('Has area in data:', hasAreaInData)
+        
+        if (hasMainCategories && hasSubCategories) {
+          console.log('✅ DETECTED: 9 Criteria - Plaza Ranking')
+          return 'achievement'
+        }
+      }
+    }
+    
     const headerRow = rows[5]
     const dataRow = rows[6]
     
-    if (!headerRow || !dataRow) return null
+    if (!headerRow || !dataRow) {
+      console.log('❌ No header or data row at position 5/6')
+      return null
+    }
     
     const headers = headerRow.map((h: any) => String(h || '').toLowerCase().trim())
+    console.log('Headers at row 5:', headers.slice(0, 10))
+    
+    // Check for 9 Criteria - Plaza Ranking (has specific pattern after row 5)
+    // REMOVED - Now checked at the beginning of detectCleanerType
     
     // Check for Customer Jorip Entry (has specific columns at row 6)
     if (rows.length > 6) {
@@ -47,6 +103,7 @@ function App() {
                                  joripHeaders.includes('customer mob. number') &&
                                  joripHeaders.includes('survey entry date')
         if (hasJoripPattern) {
+          console.log('✅ DETECTED: Customer Jorip Entry')
           return 'customerjorip'
         }
       }
@@ -61,6 +118,7 @@ function App() {
                                  salesHeaders.includes('cash sale') &&
                                  salesHeaders.includes('hire sale')
         if (hasSalesPattern) {
+          console.log('✅ DETECTED: Sales Breakdown Report')
           return 'salesbreakdown'
         }
       }
@@ -73,6 +131,7 @@ function App() {
       String(cell || '').toLowerCase().includes('achieve')
     )
     if (hasDoubleHeader && headers.some(h => h.includes('division'))) {
+      console.log('✅ DETECTED: 9 Criteria (fallback detection)')
       return 'achievement'
     }
     
@@ -81,6 +140,7 @@ function App() {
                                   headers.includes('customer name') && 
                                   headers.includes('assign person id')
     if (hasHireTargetPattern) {
+      console.log('✅ DETECTED: Collection Target vs Achievement')
       return 'hiretarget'
     }
     
@@ -93,14 +153,17 @@ function App() {
                                   headers.includes('code')
     
     if (hasReceivablePattern) {
+      console.log('✅ DETECTED: Plaza Account Receivable')
       return 'receivable'
     }
     
     // Check for Overdue Accounts (has Area column but different structure)
     if (hasAreaColumn && headers.includes('s / n')) {
+      console.log('✅ DETECTED: Account Wise Overdue')
       return 'overdue'
     }
     
+    console.log('❌ NO CLEANER DETECTED')
     return null
   }
 
@@ -272,30 +335,124 @@ function App() {
   }
 
   const cleanAchievement = (rows: any[][]) => {
+    console.log('=== CLEANING 9 CRITERIA ===')
+    console.log('Total rows before cleaning:', rows.length)
+    
+    // 1. Skip first 5 rows
     rows = rows.slice(5)
-    const header1 = rows[0]
-    const header2 = rows[1]
-
-    const headers = header1.map((h: any, i: number) => {
-      const sub = header2[i]
-      if (sub && sub !== '') return h + ' - ' + sub
-      return h
+    console.log('Rows after skipping first 5:', rows.length)
+    
+    // 2. Transpose: turn rows into columns
+    const transposed = transposeArray(rows)
+    console.log('After transpose, rows (now columns):', transposed.length)
+    
+    // 3. Fill Down Column1 (the main category)
+    const filledDown = fillDownColumn(transposed, 0)
+    console.log('After fill down Column1')
+    
+    // 4. Merge Column1 and Column2 with " - " separator
+    const merged = filledDown.map(row => {
+      const col1 = String(row[0] || '').trim()
+      const col2 = String(row[1] || '').trim()
+      
+      // Merge with " - " if both exist, otherwise use whichever exists
+      let mergedHeader = ''
+      if (col1 && col2) {
+        mergedHeader = `${col1} - ${col2}`
+      } else if (col1) {
+        mergedHeader = col1
+      } else if (col2) {
+        mergedHeader = col2
+      }
+      
+      // Return merged header + rest of the columns (skip col1 and col2)
+      return [mergedHeader, ...row.slice(2)]
     })
-
-    rows = rows.slice(2)
-
-    let dataset = rows.map(r => {
+    
+    console.log('After merging columns, sample merged headers:', merged.slice(0, 10).map(r => r[0]))
+    
+    // 5. Transpose back to original orientation
+    const transposedBack = transposeArray(merged)
+    console.log('After transpose back, rows:', transposedBack.length)
+    
+    // 6. Promote first row as headers
+    const headers = transposedBack[0]
+    const dataRows = transposedBack.slice(1)
+    
+    console.log('=== FINAL HEADERS ===')
+    console.log('Total headers:', headers.length)
+    headers.forEach((h: any, idx: number) => {
+      const headerStr = String(h || '').trim()
+      if (headerStr) {
+        console.log(`Column ${idx}: "${headerStr}"`)
+      }
+    })
+    console.log('=== END OF HEADERS ===')
+    
+    // Columns to remove by exact name
+    const columnsToRemoveByName = [
+      'Total (Tk.)',
+      'Hire Sales (Tk.)',
+      'Hire Acc INS or LPR Collection (Tk.)',
+      'Profit (Tk.)'
+    ]
+    
+    console.log('Columns to remove by name:', columnsToRemoveByName)
+    
+    // Convert to objects
+    let dataset = dataRows.map(r => {
       const obj: Record<string, any> = {}
-      headers.forEach((h: any, i: number) => obj[h] = r[i])
+      headers.forEach((h: any, i: number) => {
+        const headerStr = String(h || '').trim()
+        // Only add if header is not empty AND not in the remove list
+        if (headerStr && !columnsToRemoveByName.includes(headerStr)) {
+          obj[headerStr] = r[i]
+        }
+      })
       return obj
     })
+    
+    console.log('Dataset before filtering:', dataset.length)
+    if (dataset.length > 0) {
+      console.log('Sample row columns:', Object.keys(dataset[0]).slice(0, 10))
+    }
+    
+    // Filter out rows where Area is empty or "Area"
+    const filtered = dataset.filter(r => {
+      const area = String(r['Area'] || '').trim()
+      return area !== '' && area !== 'Area'
+    })
+    
+    console.log('Dataset after filtering:', filtered.length)
+    
+    // Convert text to numbers
+    return filtered.map(row => convertTextToNumber([row])[0])
+  }
 
-    const divisionCol = headers.find((h: string) => h.toLowerCase().includes('division'))
+  // Helper function to transpose array
+  const transposeArray = (array: any[][]): any[][] => {
+    if (!array || array.length === 0) return []
+    const maxLength = Math.max(...array.map(row => row.length))
+    return Array.from({ length: maxLength }, (_, colIndex) =>
+      array.map(row => row[colIndex] !== undefined ? row[colIndex] : '')
+    )
+  }
 
-    return dataset.filter(r => {
-      const div = String(r[divisionCol] || '').trim()
-      return div !== '' && div !== 'Division'
-    }).map(row => convertTextToNumber([row])[0])
+  // Helper function to fill down a column
+  const fillDownColumn = (array: any[][], columnIndex: number): any[][] => {
+    let lastValue = ''
+    return array.map(row => {
+      const newRow = [...row]
+      const cellValue = String(newRow[columnIndex] || '').trim()
+      
+      if (cellValue) {
+        lastValue = cellValue
+      } else {
+        newRow[columnIndex] = lastValue
+      }
+      
+      return newRow
+    })
   }
 
   const cleanHireTarget = (rows: any[][]) => {
