@@ -12,7 +12,8 @@ function CleanerSelector({ value, onChange }: CleanerSelectorProps) {
     { value: 'achievement', label: '9 Criteria - Plaza Ranking Cleaner', icon: '🏆' },
     { value: 'hiretarget', label: 'Collection Target vs Achievement (AC Wise) Cleaner', icon: '🎯' },
     { value: 'salesbreakdown', label: 'Sales Breakdown Report Cleaner', icon: '📈' },
-    { value: 'customerjorip', label: 'Customer Jorip Entry Cleaner', icon: '👥' }
+    { value: 'customerjorip', label: 'Customer Jorip Entry Cleaner', icon: '👥' },
+    { value: 'mobilecollection', label: 'Mobile Collection Report Cleaner', icon: '📱' }
   ]
 
   return (

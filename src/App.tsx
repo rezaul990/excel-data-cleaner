@@ -91,6 +91,22 @@ function App() {
     const headers = headerRow.map((h: any) => String(h || '').toLowerCase().trim())
     console.log('Headers at row 5:', headers.slice(0, 10))
     
+    // Check for Mobile Collection Report (starts at row 4, has PSD Name, Zone Name, Plaza Name)
+    if (rows.length > 4) {
+      const mobileHeaderRow = rows[4]
+      if (mobileHeaderRow) {
+        const mobileHeaders = mobileHeaderRow.map((h: any) => String(h || '').toLowerCase().trim())
+        const hasMobilePattern = mobileHeaders.includes('psd name') && 
+                                  mobileHeaders.includes('zone name') &&
+                                  mobileHeaders.includes('plaza name') &&
+                                  mobileHeaders.includes('retail collec')
+        if (hasMobilePattern) {
+          console.log('✅ DETECTED: Mobile Collection Report')
+          return 'mobilecollection'
+        }
+      }
+    }
+    
     // Check for 9 Criteria - Plaza Ranking (has specific pattern after row 5)
     // REMOVED - Now checked at the beginning of detectCleanerType
     
@@ -208,7 +224,8 @@ function App() {
       'achievement': '9 Criteria - Plaza Ranking Cleaner',
       'hiretarget': 'Collection Target vs Achievement (AC Wise) Cleaner',
       'salesbreakdown': 'Sales Breakdown Report Cleaner',
-      'customerjorip': 'Customer Jorip Entry Cleaner'
+      'customerjorip': 'Customer Jorip Entry Cleaner',
+      'mobilecollection': 'Mobile Collection Report Cleaner'
     }
     return names[type] || type
   }
@@ -243,6 +260,10 @@ function App() {
           result = cleanCustomerJorip(rows)
           fname = 'cleaned_customerjorip.xlsx'
           break
+        case 'mobilecollection':
+          result = cleanMobileCollection(rows)
+          fname = 'cleaned_mobilecollection.xlsx'
+          break
         default:
           result = []
       }
@@ -251,7 +272,7 @@ function App() {
         setModal({
           isOpen: true,
           title: 'No Data Found',
-          message: 'আপনার Upload করা File এর Cleaner Available নেই। Developer এর সাথে যোগাযোগ করুন।\n\nAvailable Cleaners:\n• Account Wise Overdue Cleaner\n• Plaza Account Receivable (Division) Cleaner\n• 9 Criteria - Plaza Ranking Cleaner\n• Collection Target vs Achievement (AC Wise) Cleaner\n• Sales Breakdown Report Cleaner\n• Customer Jorip Entry Cleaner',
+          message: 'আপনার Upload করা File এর Cleaner Available নেই। Developer এর সাথে যোগাযোগ করুন।\n\nAvailable Cleaners:\n• Account Wise Overdue Cleaner\n• Plaza Account Receivable (Division) Cleaner\n• 9 Criteria - Plaza Ranking Cleaner\n• Collection Target vs Achievement (AC Wise) Cleaner\n• Sales Breakdown Report Cleaner\n• Customer Jorip Entry Cleaner\n• Mobile Collection Report Cleaner',
           type: 'error'
         })
         setStatus('⚠️ Could not auto-detect file type. Please select cleaner manually and click Process.')
@@ -274,7 +295,7 @@ function App() {
       setModal({
         isOpen: true,
         title: 'Processing Error',
-        message: 'আপনার Upload করা File এর Cleaner Available নেই। Developer এর সাথে যোগাযোগ করুন।\n\nAvailable Cleaners:\n• Account Wise Overdue Cleaner\n• Plaza Account Receivable (Division) Cleaner\n• 9 Criteria - Plaza Ranking Cleaner\n• Collection Target vs Achievement (AC Wise) Cleaner\n• Sales Breakdown Report Cleaner\n• Customer Jorip Entry Cleaner',
+        message: 'আপনার Upload করা File এর Cleaner Available নেই। Developer এর সাথে যোগাযোগ করুন।\n\nAvailable Cleaners:\n• Account Wise Overdue Cleaner\n• Plaza Account Receivable (Division) Cleaner\n• 9 Criteria - Plaza Ranking Cleaner\n• Collection Target vs Achievement (AC Wise) Cleaner\n• Sales Breakdown Report Cleaner\n• Customer Jorip Entry Cleaner\n• Mobile Collection Report Cleaner',
         type: 'error'
       })
       setStatus('⚠️ Could not auto-detect file type. Please select cleaner manually and click Process.')
@@ -650,6 +671,58 @@ function App() {
     }).map(row => convertTextToNumber([row])[0])
   }
 
+  const cleanMobileCollection = (rows: any[][]) => {
+    // Skip first 4 rows
+    rows = rows.slice(4)
+    const headers = rows[0]
+    rows = rows.slice(1)
+
+    let dataset = rows.map(r => {
+      const obj: Record<string, any> = {}
+      headers.forEach((h: any, i: number) => obj[h] = r[i])
+      return obj
+    })
+
+    // Remove specific columns
+    const columnsToRemove = ['Column2', 'Column6', 'Column11', 'Column13', 'Column14', 'Column15']
+
+    dataset = dataset.map(row => {
+      const newRow: Record<string, any> = {}
+      Object.keys(row).forEach(key => {
+        if (!columnsToRemove.includes(key) && !key.includes('.xls')) {
+          newRow[key] = row[key]
+        }
+      })
+      return newRow
+    })
+
+    // Filter out invalid rows
+    const invalidValues = [
+      null,
+      'Designed and developed by: Walton Group',
+      'Grand Total',
+      'Mobile Collection Report',
+      'PSD Name',
+      'Walton Plaza'
+    ]
+
+    return dataset.filter(r => {
+      const psdName = String(r['PSD Name'] || '').trim()
+      
+      // Check if PSD name is invalid
+      if (!psdName || invalidValues.includes(psdName)) {
+        return false
+      }
+      
+      // Check if PSD name starts with "For the period of"
+      if (psdName.startsWith('For the period of')) {
+        return false
+      }
+      
+      return true
+    }).map(row => convertTextToNumber([row])[0])
+  }
+
   const handleDownload = () => {
     if (!cleanedData || cleanedData.length === 0) {
       setModal({
@@ -807,6 +880,10 @@ function App() {
             <li className="cleaner-item">
               <span className="cleaner-item-icon">👥</span>
               <span className="cleaner-item-text">Customer Jorip Entry Cleaner</span>
+            </li>
+            <li className="cleaner-item">
+              <span className="cleaner-item-icon">📱</span>
+              <span className="cleaner-item-text">Mobile Collection Report Cleaner</span>
             </li>
           </ul>
           <div className="sidebar-footer">
